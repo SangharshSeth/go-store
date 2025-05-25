@@ -1,0 +1,23 @@
+# Git
+.git/
+.gitignore
+
+# Go build artifacts
+*.exe
+*.test
+*.prof
+
+# Development environment
+.env.development
+.idea/
+.vscode/
+
+# Docker files (not needed for Elastic Beanstalk)
+Dockerfile
+compose.yaml
+README.Docker.md
+
+# Other
+*.log
+*.swp
+*.swo
