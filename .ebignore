@@ -21,3 +21,6 @@ README.Docker.md
 *.log
 *.swp
 *.swo
+
+.env
+.env.development

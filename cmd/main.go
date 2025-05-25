@@ -47,8 +47,18 @@ func main() {
 
 	// Connect to PostgresSQL
 	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
 	dbUser := os.Getenv("DB_USER")
+	if dbUser == "" {
+		dbUser = "postgres" // Default user
+	}
 	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		dbPassword = "password" // Default password
+		log.Println("Using default password for PostgresSQL")
+	}
 	dbName := "postgres" // Default database name
 	dbPort := "5432"     // Default PostgresSQL port
 
@@ -58,7 +68,7 @@ func main() {
 	// Connect to the database
 	conn, err := pgx.Connect(context.Background(), connString)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		log.Printf("Unable to connect to database: %v", err)
 	}
 	defer conn.Close(context.Background())
 
@@ -66,7 +76,7 @@ func main() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		log.Printf("unable to load SDK config, %v", err)
 	}
 
 	s3Client := s3.NewFromConfig(cfg)
@@ -94,7 +104,7 @@ func main() {
 		minPriceStr := c.Query("min_price")
 		maxPriceStr := c.Query("max_price")
 
-		// Build the SQL query with optional price range filter
+		// Build the SQL query with an optional price range filter
 		query := "SELECT id, name, price FROM products"
 		var args []interface{}
 		var conditions []string
@@ -124,7 +134,7 @@ func main() {
 			}
 		}
 
-		// Add WHERE clause if we have conditions
+		// Add a WHERE clause if we have conditions
 		if len(conditions) > 0 {
 			query += " WHERE " + conditions[0]
 			for i := 1; i < len(conditions); i++ {
@@ -165,11 +175,7 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // Default port if not specified
-	}
-
+	port := "5000"
 	err = router.Run(":" + port)
 	if err != nil {
 		log.Fatalf("error running app: %v", err)
