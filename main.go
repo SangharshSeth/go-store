@@ -1,16 +1,10 @@
 package main
 
 import (
-	"context"
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -21,45 +15,21 @@ type Product struct {
 	Price int    `json:"price"`
 }
 
-// Sample product data
-var products = []Product{
-	{ID: 1, Name: "Laptop", Price: 999},
-	{ID: 2, Name: "Smartphone", Price: 499},
-	{ID: 3, Name: "Headphones", Price: 99},
-	{ID: 4, Name: "Monitor", Price: 299},
-	{ID: 5, Name: "Keyboard", Price: 59},
-}
-
-func getSignedURL(bucket string, key string, s3Client *s3.Client) (string, error) {
-	presignedClient := s3.NewPresignClient(s3Client)
-
-	presignDuration := 10 * time.Minute
-
-	input := &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}
-
-	presignedURL, err := presignedClient.PresignGetObject(context.TODO(), input, s3.WithPresignExpires(presignDuration))
-	if err != nil {
-		return "", err
-	}
-	return presignedURL.URL, nil
+// sampleProducts is a static list of products to replace database queries
+var sampleProducts = []Product{
+	{ID: 1, Name: "iPhone 13 Pro", Price: 999},
+	{ID: 2, Name: "MacBook Air M1", Price: 1299},
+	{ID: 3, Name: "Samsung Galaxy S21", Price: 799},
+	{ID: 4, Name: "Dell XPS 13", Price: 1199},
+	{ID: 5, Name: "Sony WH-1000XM4", Price: 349},
+	{ID: 6, Name: "iPad Pro", Price: 799},
+	{ID: 7, Name: "Nintendo Switch", Price: 299},
+	{ID: 8, Name: "Bose QuietComfort Earbuds", Price: 279},
 }
 
 func main() {
-	err := godotenv.Load(".env.development")
-	if err != nil {
-		log.Println("app is running in development mode")
-	}
-
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Printf("unable to load SDK config, %v", err)
-	}
-
-	s3Client := s3.NewFromConfig(cfg)
-	log.Println(s3Client)
+	// Load environment variables if available but not required anymore
+	_ = godotenv.Load(".env.development")
 
 	router := gin.Default()
 
@@ -79,44 +49,13 @@ func main() {
 	})
 
 	router.GET("/", func(c *gin.Context) {
-		// Get price range filter parameters
-		minPriceStr := c.Query("min_price")
-		maxPriceStr := c.Query("max_price")
-
-		// Filter products based on price range
-		filteredProducts := make([]Product, 0)
-		for _, p := range products {
-			include := true
-
-			if minPriceStr != "" {
-				minPrice, err := strconv.Atoi(minPriceStr)
-				if err == nil && p.Price < minPrice {
-					include = false
-				}
-			}
-
-			if maxPriceStr != "" {
-				maxPrice, err := strconv.Atoi(maxPriceStr)
-				if err == nil && p.Price > maxPrice {
-					include = false
-				}
-			}
-
-			if include {
-				filteredProducts = append(filteredProducts, p)
-			}
-		}
-
 		c.HTML(http.StatusOK, "index.html", gin.H{
-			"products":  filteredProducts,
-			"min_price": minPriceStr,
-			"max_price": maxPriceStr,
+			"products": sampleProducts,
 		})
 	})
 
 	port := "5000"
-	err = router.Run(":" + port)
-	if err != nil {
+	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("error running app: %v", err)
 	}
 }
